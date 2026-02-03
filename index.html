@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Community Health Check</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#0f172a; --card:#1a2332; --card-hi:#243044; --border:#2d3a4f;
+    --text:#e2e8f0; --dim:#7a8fa3; --xs:#4e6177;
+    --accent:#38bdf8; --accent2:#818cf8;
+    --green:#34d399; --green-bg:#064e3b;
+    --amber:#fbbf24; --amber-bg:#451a03;
+    --red:#f87171;   --red-bg:#450a0a;
+  }
+  html,body { height:100%; background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+
+  .wrap  { min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; }
+  .card  { width:100%; max-width:460px; background:var(--card); border-radius:22px; border:1px solid var(--border); box-shadow:0 24px 60px rgba(0,0,0,.45); overflow:hidden; }
+  .stripe { height:4px; background:linear-gradient(90deg,var(--accent),var(--accent2),#c084fc); }
+
+  /* dots */
+  .dots { display:flex; justify-content:center; gap:6px; padding:18px 0 0; }
+  .dot  { width:7px; height:7px; border-radius:999px; background:var(--border); transition:all .3s; }
+  .dot.done   { background:var(--accent); }
+  .dot.active { background:var(--accent2); width:22px; }
+
+  /* screens */
+  .screen { display:none; padding:32px 24px 28px; animation:fadeIn .25s ease; }
+  .screen.show { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* type */
+  h1   { font-size:24px; font-weight:700; color:var(--text); font-family:Georgia,serif; line-height:1.3; }
+  .dim { color:var(--dim); }
+  .xs  { color:var(--xs); font-size:13px; }
+  .center { text-align:center; }
+  .mt8{margin-top:8px} .mt12{margin-top:12px} .mt16{margin-top:16px} .mt20{margin-top:20px} .mt24{margin-top:24px}
+  .mb6{margin-bottom:6px} .mb8{margin-bottom:8px} .mb12{margin-bottom:12px} .mb16{margin-bottom:16px} .mb20{margin-bottom:20px}
+
+  /* buttons */
+  .btn-primary {
+    display:block; width:100%; padding:13px 0; border-radius:12px; border:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; font-size:16px; font-weight:700; cursor:pointer;
+    letter-spacing:.4px; transition:opacity .2s,transform .12s;
+  }
+  .btn-primary:hover  { opacity:.88; transform:scale(1.015); }
+  .btn-primary:active { transform:scale(.98); }
+  .btn-primary:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+  .btn-ghost {
+    display:block; width:100%; padding:13px 0; border-radius:12px;
+    border:none; background:var(--card-hi); color:var(--dim);
+    font-size:15px; font-weight:600; cursor:pointer; transition:background .2s;
+  }
+  .btn-ghost:hover { background:var(--border); }
+
+  /* role cards */
+  .role-row  { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .role-card {
+    flex:1 1 140px; max-width:180px; background:var(--card-hi); border:2px solid var(--border);
+    border-radius:16px; padding:28px 20px; cursor:pointer; transition:all .2s;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    color:var(--text); font-size:15px; font-weight:600;
+  }
+  .role-card:hover { border-color:var(--accent); background:#1e3a5f; }
+  .role-card .icon { font-size:32px; }
+
+  /* inputs */
+  .field       { margin-bottom:14px; }
+  .field label { display:block; color:#cbd5e1; font-size:13px; margin-bottom:4px; font-weight:500; }
+  .field .req  { color:var(--red); }
+  .field input {
+    width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid var(--border);
+    background:var(--card-hi); color:var(--text); font-size:14px; outline:none; transition:border-color .2s;
+  }
+  .field input:focus { border-color:var(--accent); }
+  .field input::placeholder { color:var(--xs); }
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;}
+  input[type=number]{-moz-appearance:textfield;}
+
+  /* quiz */
+  .progress-track { background:var(--card-hi); border-radius:999px; height:6px; overflow:hidden; margin-bottom:24px; }
+  .progress-fill  { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:999px; transition:width .35s; }
+  .q-text { font-size:17px; font-weight:500; line-height:1.55; min-height:68px; display:flex; align-items:center; justify-content:center; }
+  .hint-last { font-style:italic; color:var(--xs); font-size:13px; margin-top:10px; margin-bottom:14px; }
+  .yn-row { display:flex; gap:12px; justify-content:center; }
+  .yn-btn {
+    flex:1; max-width:160px; padding:14px 0; border-radius:14px; font-size:17px; font-weight:700;
+    cursor:pointer; transition:transform .15s,box-shadow .15s; border:2px solid;
+  }
+  .yn-btn.yes  { border-color:var(--green); background:var(--green-bg); color:var(--green); }
+  .yn-btn.no   { border-color:var(--red);   background:var(--red-bg);   color:var(--red);   }
+  .yn-btn:hover { transform:scale(1.04); }
+  .yn-btn.yes:hover { box-shadow:0 0 18px rgba(52,211,153,.35); }
+  .yn-btn.no:hover  { box-shadow:0 0 18px rgba(248,113,113,.35); }
+
+  /* spinner */
+  .spinner-wrap { text-align:center; padding:28px 0; }
+  .spinner { width:36px; height:36px; margin:0 auto; border:3px solid var(--card-hi); border-top:3px solid var(--accent2); border-radius:50%; animation:spin .6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* results */
+  .ring-wrap    { position:relative; width:140px; height:140px; margin:0 auto; }
+  .ring-wrap svg{ transform:rotate(-90deg); display:block; }
+  .ring-center  { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-pct     { font-size:28px; font-weight:700; }
+  .ring-label   { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; margin-top:2px; }
+  .verdict      { border-radius:12px; padding:14px 18px; text-align:center; }
+  .verdict p    { font-size:14px; font-weight:600; margin:0; }
+  .gaps-title   { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--dim); }
+  .gap-row      { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .gap-row:last-child { border-bottom:none; }
+  .gap-x        { color:var(--red); font-size:16px; flex-shrink:0; margin-top:1px; }
+  .gap-text     { color:#cbd5e1; font-size:14px; line-height:1.45; }
+  .info-box     { background:var(--card-hi); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+  .info-box .label { color:var(--dim); font-size:13px; font-weight:600; margin-bottom:4px; }
+  .info-box .val   { color:#cbd5e1; font-size:13px; line-height:1.8; }
+  .status-ok   { color:var(--green); font-size:13px; text-align:center; font-weight:600; }
+  .status-fail { color:var(--red);   font-size:13px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+  <div class="stripe"></div>
+  <div class="dots" id="dots"></div>
+
+  <!-- LANDING -->
+  <div class="screen show" id="s-landing" style="padding-top:44px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:8px;">🏘️</div>
+    <h1>Community Health Check</h1>
+    <p class="dim mt12" style="font-size:15px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6;">
+      Answer 15 quick Yes / No questions to discover gaps in your current property management setup — and see where a unified platform could help.
+    </p>
+    <p class="xs mt8" style="max-width:360px;margin-left:auto;margin-right:auto;line-height:1.5;">
+      Takes about <strong style="color:var(--dim)">2 minutes</strong>. Results are instant.
+    </p>
+    <button class="btn-primary mt24" onclick="goTo('role')">Get Started →</button>
+  </div>
+
+  <!-- ROLE -->
+  <div class="screen" id="s-role">
+    <p class="center dim mb16" style="font-size:15px;">What best describes your role?</p>
+    <div class="role-row">
+      <div class="role-card" onclick="pickRole('pm')"><span class="icon">🏢</span>Property Manager</div>
+      <div class="role-card" onclick="pickRole('board')"><span class="icon">📋</span>Board Member</div>
+    </div>
+  </div>
+
+  <!-- LEAD -->
+  <div class="screen" id="s-lead">
+    <p class="center dim mb16" style="font-size:15px;">A little about you — so we can make results relevant.</p>
+    <div class="field"><label>Name <span class="req">*</span></label><input type="text"   id="l-name"  placeholder="Name"            oninput="checkLead()"/></div>
+    <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="l-email" placeholder="Email"           oninput="checkLead()"/></div>
+    <div class="field"><label>Number of Doors <span class="req">*</span></label><input type="number" id="l-doors" placeholder="e.g. 200" oninput="checkLead()"/></div>
+    <div class="field"><label>Phone (optional)</label><input type="tel"  id="l-phone" placeholder="Phone number"/></div>
+    <div class="field"><label>Your Role in Community</label><input type="text" id="l-role" placeholder="e.g. Treasurer"/></div>
+    <button class="btn-primary mt12" id="btn-lead" disabled onclick="goTo('quiz')">Continue →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="s-quiz">
+    <div class="progress-track"><div class="progress-fill" id="prog"></div></div>
+    <p class="xs center mb6" id="q-counter"></p>
+    <p class="q-text center" id="q-text"></p>
+    <p class="hint-last center" id="hint-last" style="display:none;">Answer this last question to receive your score →</p>
+    <div id="quiz-body">
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="answer(true)">✓ Yes</button>
+        <button class="yn-btn no"  onclick="answer(false)">✕ No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="s-results">
+    <p class="center xs mb16" id="res-greeting"></p>
+    <div id="ring-wrap" class="ring-wrap"></div>
+    <div class="verdict mt24 mb20" id="verdict"></div>
+    <div id="gaps-section"></div>
+    <div class="info-box mb20" id="info-box"></div>
+    <p class="xs center mb20" style="line-height:1.5;">A specialist will reach out to walk you through a tailored demo based on your results.</p>
+    <div id="email-status" style="margin-bottom:12px;"></div>
+    <button class="btn-ghost" onclick="restart()">↺ Retake Quiz</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── "Referred By" is injected into the URL as a query param by the team member.
+//     e.g.  https://your-quiz.vercel.app/?ref=Sarah+Chen|sarah@company.com
+//     The team member page (see setup guide) handles this automatically.
+const params   = new URLSearchParams(window.location.search);
+const refRaw   = (params.get('ref') || '').split('|');
+const REFERRED = { name: refRaw[0] || '', email: refRaw[1] || '' };
+
+// ─── Questions ──────────────────────────────────────────────────────────────
+const QUESTIONS = {
+  pm:[
+    "Do you have real-time access to your data?",
+    "Are you using more than one system to run day-to-day operations?",
+    "Can you generate delinquency and owner ledger reports instantly?",
+    "Can homeowners quickly pay dues on mobile?",
+    "Is autopay available for homeowners?",
+    "Do your systems minimize daily interruptions from homeowner inquiries?",
+    "Can homeowners self-serve statements, documents, and payment history?",
+    "Are you able to generate board-ready reports without changes in another system?",
+    "Can boards access financial reports without requesting them from staff?",
+    "Can invoices be approved digitally without email chains?",
+    "Does month-end close take less than 5 business days?",
+    "Are reconciliations mostly automated?",
+    "If a key employee left, could someone step in without disruption?",
+    "Does your current tech stack scale easily as you add doors?",
+    "Can your board make a budget in 10 minutes or less?"
+  ],
+  board:[
+    "Do you fully own and control your association's financial and homeowner data?",
+    "If you switched platforms tomorrow, could you export all your data easily?",
+    "Can you access real-time financial reports without outside help?",
+    "Can you generate a P&L and balance sheet on demand?",
+    "Can homeowners view their account balance and payment history anytime?",
+    "Can homeowners pay dues online in under 2 minutes on a mobile phone?",
+    "Is autopay available for all homeowners today?",
+    "Do homeowners receive automatic payment confirmations and receipts?",
+    "Can board members approve invoices online with a clear audit trail?",
+    "Can you see who approved a payment and when?",
+    "Can a new board member quickly understand the association's finances?",
+    "If a key volunteer stepped away, would operations continue smoothly?",
+    "Do homeowners have a self-service portal for documents and requests?",
+    "Can homeowners track the status of submitted requests online?",
+    "Are you confident your resident and payment data are secure?"
+  ]
+};
+
+let state = { role:null, answers:[], current:0, lead:{}, submitOk:null };
+
+// ─── Dots ───────────────────────────────────────────────────────────────────
+const DOT_LABELS = ["Start","Role","Info","Quiz","Results"];
+const DOT_MAP    = { landing:0, role:1, lead:2, quiz:3, results:4 };
+function buildDots() {
+  document.getElementById('dots').innerHTML = DOT_LABELS.map((_,i)=>`<div class="dot" id="dot-${i}"></div>`).join('');
+}
+function updateDots(sid) {
+  const a = DOT_MAP[sid]??0;
+  DOT_LABELS.forEach((_,i)=>{
+    document.getElementById(`dot-${i}`).className = 'dot'+(i<a?' done':i===a?' active':'');
+  });
+}
+
+// ─── Nav ────────────────────────────────────────────────────────────────────
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById('s-'+id).classList.add('show');
+  updateDots(id);
+  if (id==='quiz')    renderQuestion();
+  if (id==='results') renderResults();
+}
+
+// ─── Lead form ──────────────────────────────────────────────────────────────
+function checkLead() {
+  const n=document.getElementById('l-name').value.trim();
+  const e=document.getElementById('l-email').value.trim();
+  const d=document.getElementById('l-doors').value.trim();
+  document.getElementById('btn-lead').disabled = !(n && e.includes('@') && d);
+}
+function readLead() {
+  return {
+    name:  document.getElementById('l-name').value.trim(),
+    email: document.getElementById('l-email').value.trim(),
+    doors: document.getElementById('l-doors').value.trim(),
+    phone: document.getElementById('l-phone').value.trim(),
+    role:  document.getElementById('l-role').value.trim()
+  };
+}
+
+// ─── Role ───────────────────────────────────────────────────────────────────
+function pickRole(r) { state.role=r; goTo('lead'); }
+function questions() { return QUESTIONS[state.role]; }
+
+// ─── Quiz ───────────────────────────────────────────────────────────────────
+function renderQuestion() {
+  const qs=questions(), i=state.current, isLast=i===qs.length-1;
+  document.getElementById('q-counter').textContent = `Question ${i+1} of ${qs.length}`;
+  document.getElementById('q-text').textContent    = qs[i];
+  document.getElementById('prog').style.width      = (state.answers.length/qs.length*100)+'%';
+  document.getElementById('hint-last').style.display = isLast?'block':'none';
+  document.getElementById('quiz-body').innerHTML = `
+    <div class="yn-row">
+      <button class="yn-btn yes" onclick="answer(true)">✓ Yes</button>
+      <button class="yn-btn no"  onclick="answer(false)">✕ No</button>
+    </div>`;
+}
+
+async function answer(val) {
+  state.answers.push(val);
+  if (state.answers.length < questions().length) {
+    state.current++;
+    renderQuestion();
+  } else {
+    // last answer — spinner → submit → results
+    document.getElementById('quiz-body').innerHTML =
+      `<div class="spinner-wrap"><div class="spinner"></div><p class="xs center mt12">Calculating your score…</p></div>`;
+    state.lead = readLead();
+    state.submitOk = await submitResults();
+    await new Promise(r=>setTimeout(r,600));
+    goTo('results');
+  }
+}
+
+// ─── Submit to Vercel serverless function ───────────────────────────────────
+async function submitResults() {
+  try {
+    const { pct, label } = scoreInfo();
+    const gaps = questions().filter((_,i)=>!state.answers[i]).join('; ') || 'None';
+    const payload = {
+      leadName:        state.lead.name,
+      leadEmail:       state.lead.email,
+      leadPhone:       state.lead.phone,
+      leadDoors:       state.lead.doors,
+      leadRole:        state.lead.role,
+      quizRole:        state.role==='pm'?'Property Manager':'Board Member',
+      scorePct:        pct,
+      scoreLabel:      label,
+      gaps:            gaps,
+      referredByName:  REFERRED.name,
+      referredByEmail: REFERRED.email
+    };
+    const res = await fetch('/api/submit', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    return res.ok;
+  } catch(e) { console.error(e); return false; }
+}
+
+// ─── Results ────────────────────────────────────────────────────────────────
+function scoreInfo() {
+  const yes=state.answers.filter(Boolean).length;
+  const pct=Math.round(yes/questions().length*100);
+  if(pct>=80) return {pct,label:'Optimized',      color:'var(--green)',bg:'var(--green-bg)'};
+  if(pct>=50) return {pct,label:'Gaps Exist',     color:'var(--amber)',bg:'var(--amber-bg)'};
+  return             {pct,label:'Needs Attention', color:'var(--red)',  bg:'var(--red-bg)'};
+}
+
+function renderResults() {
+  const {pct,label,color,bg}=scoreInfo();
+  const gaps=questions().filter((_,i)=>!state.answers[i]);
+  const lead=state.lead;
+
+  document.getElementById('res-greeting').textContent=`Your community score, ${lead.name}`;
+
+  const R=54, C=2*Math.PI*R, offset=C-(pct/100)*C;
+  document.getElementById('ring-wrap').innerHTML=`
+    <svg width="140" height="140"><circle cx="70" cy="70" r="${R}" fill="none" stroke="var(--card-hi)" stroke-width="10"/><circle cx="70" cy="70" r="${R}" fill="none" stroke="${color}" stroke-width="10" stroke-dasharray="${C}" stroke-dashoffset="${offset}" stroke-linecap="round" style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"/></svg>
+    <div class="ring-center"><span class="ring-pct" style="color:${color}">${pct}%</span><span class="ring-label" style="color:${color}">${label}</span></div>`;
+
+  const msg = pct>=80
+    ? "Great news — your setup is solid. A unified platform could still streamline further."
+    : pct>=50
+      ? "You're halfway there. A few key gaps are holding your community back."
+      : "There's significant room to improve. The right platform can close these gaps fast.";
+  document.getElementById('verdict').style.background=bg;
+  document.getElementById('verdict').style.border=`1px solid ${color}33`;
+  document.getElementById('verdict').innerHTML=`<p style="color:${color}">${msg}</p>`;
+
+  let gapsHtml='';
+  if(gaps.length){
+    gapsHtml=`<p class="gaps-title mb8">Areas to address (${gaps.length})</p>`;
+    gaps.forEach(g=>{ gapsHtml+=`<div class="gap-row"><span class="gap-x">✕</span><span class="gap-text">${g}</span></div>`; });
+    gapsHtml=`<div class="mb20">${gapsHtml}</div>`;
+  }
+  document.getElementById('gaps-section').innerHTML=gapsHtml;
+
+  let info=`${lead.name} · ${lead.email} · ${lead.doors} doors`;
+  if(lead.phone) info+=` · ${lead.phone}`;
+  if(lead.role)  info+=` · ${lead.role}`;
+  if(REFERRED.name) info+=`<br><span style="color:var(--xs);font-size:12px;">Referred by: ${REFERRED.name} (${REFERRED.email})</span>`;
+  document.getElementById('info-box').innerHTML=`<div class="label">Your info on file</div><div class="val">${info}</div>`;
+
+  const s=document.getElementById('email-status');
+  if(state.submitOk===true)  s.innerHTML='<p class="status-ok">✓ Results submitted successfully</p>';
+  else if(state.submitOk===false) s.innerHTML='<p class="status-fail">Results could not be saved — please try again.</p>';
+  else s.innerHTML='';
+}
+
+// ─── Restart ────────────────────────────────────────────────────────────────
+function restart() {
+  state={role:null,answers:[],current:0,lead:{},submitOk:null};
+  ['l-name','l-email','l-doors','l-phone','l-role'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('btn-lead').disabled=true;
+  goTo('landing');
+}
+
+buildDots(); updateDots('landing');
+</script>
+</body>
+</html>

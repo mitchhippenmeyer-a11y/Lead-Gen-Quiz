@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Send the Quiz</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--bg:#0f172a;--card:#1a2332;--card-hi:#243044;--border:#2d3a4f;--text:#e2e8f0;--dim:#7a8fa3;--xs:#4e6177;--accent:#38bdf8;--accent2:#818cf8;--green:#34d399;--red:#f87171;}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;}
+  .card{width:100%;max-width:460px;background:var(--card);border-radius:22px;border:1px solid var(--border);box-shadow:0 24px 60px rgba(0,0,0,.45);overflow:hidden;}
+  .stripe{height:4px;background:linear-gradient(90deg,var(--accent),var(--accent2),#c084fc);}
+  .inner{padding:40px 24px 32px;}
+  h1{font-size:22px;font-weight:700;font-family:Georgia,serif;color:var(--text);margin-bottom:8px;}
+  .dim{color:var(--dim);font-size:15px;line-height:1.6;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;color:#cbd5e1;font-size:13px;margin-bottom:4px;font-weight:500;}
+  .field .req{color:var(--red);}
+  .field input{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card-hi);color:var(--text);font-size:14px;outline:none;transition:border-color .2s;}
+  .field input:focus{border-color:var(--accent);}
+  .field input::placeholder{color:var(--xs);}
+  .btn{display:block;width:100%;padding:13px 0;border-radius:12px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:8px;}
+  .btn:hover{opacity:.88;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  /* link box */
+  .link-box{display:none;margin-top:24px;background:var(--card-hi);border:1px solid var(--border);border-radius:14px;padding:18px;}
+  .link-box.show{display:block;animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .link-label{color:var(--dim);font-size:13px;font-weight:600;margin-bottom:8px;}
+  .link-row{display:flex;gap:10px;align-items:center;}
+  .link-text{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--accent);font-size:13px;word-break:break-all;font-family:monospace;}
+  .copy-btn{flex-shrink:0;padding:10px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+  .copy-btn:hover{opacity:.8;}
+  .copy-btn.copied{background:var(--green);}
+  .instructions{margin-top:16px;color:var(--xs);font-size:13px;line-height:1.7;}
+  .instructions strong{color:var(--dim);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+  <div class="stripe"></div>
+  <div class="inner">
+    <h1>📤 Send the Quiz</h1>
+    <p class="dim">Fill in your info below — it'll be attached to every result that comes back from this link.</p>
+    <div style="margin-top:20px;">
+      <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="sn" placeholder="e.g. Sarah Chen" oninput="check()"/></div>
+      <div class="field"><label>Your Email <span class="req">*</span></label><input type="email" id="se" placeholder="sarah@company.com" oninput="check()"/></div>
+      <button class="btn" id="btn-gen" disabled onclick="generate()">Generate My Link →</button>
+    </div>
+
+    <div class="link-box" id="link-box">
+      <p class="link-label">Your quiz link</p>
+      <div class="link-row">
+        <div class="link-text" id="link-text"></div>
+        <button class="copy-btn" id="copy-btn" onclick="copy()">Copy</button>
+      </div>
+      <p class="instructions">
+        <strong>To send:</strong> Copy the link above, open Outlook, paste it into your email to the prospect, and hit send. That's it.<br><br>
+        <strong>Every result</strong> that comes back will show your name and email in the Google Sheet.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function check() {
+  const n=document.getElementById('sn').value.trim();
+  const e=document.getElementById('se').value.trim();
+  document.getElementById('btn-gen').disabled=!(n&&e.includes('@'));
+}
+function generate() {
+  const n=encodeURIComponent(document.getElementById('sn').value.trim());
+  const e=encodeURIComponent(document.getElementById('se').value.trim());
+  // base URL = same origin, just the root quiz page
+  const base = window.location.origin;
+  const link = `${base}/?ref=${n}|${e}`;
+  document.getElementById('link-text').textContent = link;
+  document.getElementById('link-box').classList.add('show');
+  document.getElementById('btn-gen').textContent = '✓ Link generated';
+  document.getElementById('btn-gen').style.background = 'var(--card-hi)';
+  document.getElementById('btn-gen').style.color = 'var(--dim)';
+  document.getElementById('btn-gen').disabled = true;
+}
+function copy() {
+  const link = document.getElementById('link-text').textContent;
+  navigator.clipboard.writeText(link).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    btn.textContent='Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+</script>
+</body>
+</html>
